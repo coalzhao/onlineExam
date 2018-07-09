@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.ScoreDetailDao">
+	<sql id="cmsScoreDetailColumns">
+		sd.id AS "id",
+		sd.u_id AS "userId",
+		sd.timu_id AS "timuId",
+		sd.timu_type AS "timuType"
+		sd.u_answer AS "userAnswer",
+		sd.rel_answer AS "relAnswer",
+		sd.result AS "result",
+		sd.create_date AS "createDate",
+		sd.create_by AS "createBy.id",
+		sd.update_by AS "updateBy.id",
+		sd.update_date AS "updateDate",
+		sd.remarks AS "remarks",
+		sd.del_flag AS "delFlag",
+		u.name AS "user.name"
+	</sql>
+	
+	
+	<sql id="cmsScoreDetailJoins">
+		 JOIN sys_user u ON u.id = sd.u_id 
+	</sql>
+	<!-- <sql id="cmsScoreDetailJoins">
+	JOIN cms_score s ON s.u_id = sd.u_id
+	</sql> -->
+	
+	
+	<select id="findscoreDetail" resultType="ScoreDetail">
+		SELECT 
+			<include refid="cmsScoreDetailColumns"/>
+		FROM cms_score_detail sd
+		<include refid="cmsScoreDetailJoins"/>
+		WHERE sd.u_id =#{userId}
+	</select>
+	
+	
+	<select id="findList" resultType="ScoreDetail">
+		SELECT 
+			<include refid="cmsScoreDetailColumns"/>
+		FROM cms_score_detail sd
+		<include refid="cmsScoreDetailJoins"/>
+		<where>
+			sd.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="createBy != null and createBy.id != null and createBy.id != ''">
+				AND sd.create_by  = #{createBy.id}
+			</if>
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+		</choose>
+	</select>
+	
+	
+	
+	<insert id="insert">
+	insert into cms_score_detail(id,timu_id,timu_type,
+	u_answer,
+	rel_answer,
+	paper_id,
+	u_id,
+	result,
+	create_date,
+	create_by,
+	update_date,
+	update_by,
+	remarks,
+	del_flag
+	)
+	values(
+	#{id},
+	#{timuId},
+	#{timuType},
+	#{userAnswer},
+	#{relAnswer},
+	#{paperId},
+	#{userId},
+	#{result},
+	#{createDate},
+	#{createBy.id},
+	#{updateDate},
+	#{updateBy.id},
+	#{remarks},
+	#{delFlag}
+	)
+	</insert>
+	<update id="updateScoreDetail">
+	update  cms_score_detail set
+	u_answer=#{userAnswer},result=#{result},update_date=#{updateDate},update_by=#{updateBy.id}
+	where
+	u_id=#{userId} and timu_id=#{timuId} and paper_id=#{paperId}
+	</update>
+	<select id="isAnswered" resultType="String">
+	select u_answer
+	from cms_score_detail 
+	where u_id=#{userId} 
+	and paper_id=#{paperId}
+	 and timu_id=#{timuId}
+	</select>
+	<select id="getByUserAndPaper" resultType="ScoreDetail">
+	select 
+	timu_id AS "timuId"
+	from cms_score_detail 
+	where u_id=#{userId} 
+	and paper_id=#{id}
+	 and result='T'
+	</select>
+	
+	<select id="getSubNum" resultType="int">
+	select count(sub_id) from  cms_pap_sub where paper_id=#{id} 
+	</select>
+	<select id="getSinCount" resultType="int">
+	select count(id) from cms_score_detail where u_id=#{userId} and paper_id=#{id} and timu_type=#{type}
+	and result=#{result}
+	</select>
+	<select id="getMulCount" resultType="int">
+	select count(id) from cms_score_detail where u_id=#{userId} and paper_id=#{id} and timu_type=#{type}
+	and result=#{result}
+	</select>
+	<select id="judgePaper" resultType="int">
+	select count(paper_id) from  cms_score_detail where paper_id=#{id} and u_id=#{userId} 
+	</select>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

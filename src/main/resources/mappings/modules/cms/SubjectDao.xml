@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.SubjectDao">
+
+	<sql id="cmsSubjectColumns">
+		s.id AS "id",
+		s.sub_title AS "title",
+		s.sub_option_a AS "a",
+		s.sub_option_b AS "b",
+		s.sub_option_c AS "c",
+		s.sub_option_d AS "d",
+		s.sub_option_e AS "e",
+		s.sub_option_f AS "f",
+		s.sub_option_g AS "g",
+		s.sub_correct AS "correct",
+		s.sub_type AS
+		"type",
+		s.root_id AS "subjectRoot.id",
+		s.sub_complexity AS "complexity",
+		s.create_by AS "createBy.id",
+		s.create_date AS "createDate",
+		s.update_by AS "updateBy.id",
+		s.update_date AS "updateDate",
+		s.judge AS "judge",
+		s.simulate AS "simulate",
+		s.remarks
+		AS "remarks",
+		s.del_flag AS "delFlag",
+		u.name AS "user.name",
+		r.name AS
+		"subjectRoot.name"
+	</sql>
+
+	<sql id="cmsSubjectJoins">
+		JOIN cms_subject_root r ON r.id = s.root_id
+		JOIN sys_user u
+		ON u.id = s.create_by
+	</sql>
+
+	<select id="findSubjectByPaper" resultType="Subject">
+		SELECT
+		s.id AS "id",
+		s.sub_title AS "title",
+		s.sub_option_a AS "a",
+		s.sub_option_b AS "b",
+		s.sub_option_c AS "c",
+		s.sub_option_d AS "d",
+		s.sub_option_e AS "e",
+		s.sub_option_f AS "f",
+		s.sub_option_g AS "g",
+		s.sub_correct AS "correct",
+		s.sub_type AS "type",
+		s.root_id AS "subjectRoot.id",
+		s.sub_complexity AS "complexity",
+		s.create_by AS "createBy.id",
+		s.create_date AS "createDate",
+		s.update_by AS "updateBy.id",
+		s.update_date AS "updateDate",
+		s.remarks AS "remarks",
+		s.judge AS "judge",
+		s.simulate AS "simulate",
+		s.del_flag AS "delFlag"
+		FROM cms_subject s
+		JOIN cms_pap_sub ps ON ps.sub_id=s.id
+		WHERE ps.paper_id = #{id} AND ps.del_flag='0'
+	</select>
+
+	<select id="get" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		WHERE s.id = #{id} AND s.del_flag='0'
+	</select>
+	
+	<select id="paperGetSubject" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		WHERE s.id = #{id}
+	</select>
+
+	<select id="findList" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		<where>
+			s.del_flag = #{delFlag}
+			<if test="title != null and title != ''">
+				AND s.sub_title LIKE CONCAT('%', #{title}, '%')
+			</if>
+			<if test="simulate != null and simulate != ''">
+				AND s.simulate = #{simulate}
+			</if>
+			<if test="type != null and type != ''">
+				AND s.sub_type LIKE CONCAT('%', #{type}, '%')
+			</if>
+			<if test="subjectRoot.id != null and subjectRoot.id != ''">
+				AND (s.root_id = #{subjectRoot.id}
+				<if test="subjectRoot.parentIds != null and subjectRoot.parentIds != ''">
+					or r.parent_ids like CONCAT('%,', #{subjectRoot.id},
+					',%')
+				</if>
+				)
+			</if>
+			<if test="createBy != null and createBy.id != null and createBy.id != ''">
+				AND s.create_by = #{createBy.id}
+			</if>
+			<!-- ${sqlMap.dsf} -->
+		</where>
+		ORDER BY updateDate DESC
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+		</choose>
+	</select>
+
+	<select id="findAllList" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		<where>
+			s.del_flag = #{DEL_FLAG_NORMAL}
+		</where>
+	</select>
+
+	<insert id="insert">
+		INSERT INTO cms_subject(
+		id,
+		sub_title,
+		sub_option_a,
+		sub_option_b,
+		sub_option_c,
+		sub_option_d,
+		sub_option_e,
+		sub_option_f,
+		sub_option_g,
+		sub_correct,
+		sub_type,
+		root_id,
+		sub_complexity,
+		judge,
+		simulate,
+		create_by,
+		create_date,
+		update_by,
+		update_date,
+		remarks,
+		del_flag
+		) VALUES (
+		#{id},
+		#{title},
+		#{a},
+		#{b},
+		#{c},
+		#{d},
+		#{e},
+		#{f},
+		#{g},
+		#{correct},
+		#{type},
+		#{subjectRoot.id},
+		#{complexity},
+		#{judge},
+		#{simulate},
+		#{createBy.id},
+		#{createDate},
+		#{updateBy.id},
+		#{updateDate},
+		#{remarks},
+		#{delFlag}
+		)
+	</insert>
+
+	<update id="update">
+		UPDATE cms_subject SET
+		sub_title = #{title},
+		sub_option_a = #{a},
+		sub_option_b = #{b},
+		sub_option_c = #{c},
+		sub_option_d = #{d},
+		sub_option_e = #{e},
+		sub_option_f = #{f},
+		sub_option_g = #{g},
+		sub_correct = #{correct},
+		sub_type = #{type},
+		root_id = #{subjectRoot.id},
+		sub_complexity = #{complexity},
+		judge = #{judge},
+		simulate = #{simulate},
+		create_date = #{createDate},
+		update_by = #{updateBy.id},
+		update_date = #{updateDate},
+		remarks = #{remarks},
+		del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+
+	<update id="delete">
+		UPDATE cms_subject SET
+		del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	<select id="findByIdIn" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		from cms_subject s where
+		<where>
+			id in (${id});
+		</where>
+	</select>
+
+	
+	<select id="findSubject" resultType="Subject">
+select
+su.sub_title AS "title",su.sub_option_a AS "a",su.sub_option_b AS "b",
+su.sub_option_c AS "c",su.sub_option_d AS "d",su.sub_correct AS "correct",su.sub_type AS "type", su.judge AS "judge",
+sd.u_answer AS "userAnswer",su.remarks AS "remarks",sd.result AS "result",su.id AS "id"
+from cms_score_detail sd right join cms_subject su
+on sd.timu_id=su.id
+where sd.u_id=#{uid} and sd.paper_id=#{paperId}
+</select>
+	<select id="findSubjectByRoot" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		WHERE s.root_id = #{rid}
+		AND s.del_flag = '0'
+	</select>
+	<select id="findRadioBySubjectRoot" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		WHERE s.root_id = #{rid}
+		AND s.sub_type = '1'
+		AND s.del_flag = '0'
+	</select>
+	<select id="findMultipleBySubjectRoot" resultType="Subject">
+		SELECT
+		<include refid="cmsSubjectColumns" />
+		FROM cms_subject s
+		<include refid="cmsSubjectJoins" />
+		WHERE s.root_id = #{rid}
+		AND s.sub_type = '2'
+		AND s.del_flag = '0'
+	</select>
+
+	<select id="getSubject" resultType="Subject">
+		select su.id AS "id",
+		su.sub_title AS "title",su.sub_option_a AS "a",su.sub_option_b AS "b",
+		su.sub_option_c AS "c",su.sub_option_d AS "d",su.sub_type AS "type"
+		from cms_subject su
+	</select>
+	<select id="getAnswerById" resultType="String">
+select su.sub_correct AS "answer"
+from cms_subject su
+where su.id=#{id}
+</select>
+<select id="getSubjectByOrder" resultType="Subject">
+	select 
+	su.id AS "id",
+	su.sub_title AS "title",
+	su.sub_option_a AS "a",
+	su.sub_option_b AS "b",
+	su.sub_option_c AS "c",
+	su.sub_option_d AS "d",
+	su.judge AS "judge",
+	su.sub_correct AS "correct",
+	su.sub_type AS "type"
+	from cms_subject su join cms_pap_sub ps 
+	on su.id=ps.sub_id 
+	where ps.paper_id=#{id} and ps.num=#{num} and ps.del_flag='0'
+	</select>
+	<select id="getSubByPaperId" resultType="Subject">
+	select 
+	su.id AS "id",
+	su.sub_title AS "title",
+	su.sub_option_a AS "a",
+	su.sub_option_b AS "b",
+	su.sub_option_c AS "c",
+	su.sub_option_d AS "d",
+	su.sub_correct AS "correct",
+	su.sub_type AS "type",
+	su.judge AS "judge",
+	su.simulate AS "simulate"
+	from cms_subject su join cms_pap_sub ps 
+	on su.id=ps.sub_id 
+	where ps.paper_id=#{id}
+	</select>
+	<select id="getSubTypeById" resultType="Subject">
+	select sub_type AS "type"
+	from cms_subject
+	where id=#{timuId}
+	</select> 
+	
+	
+</mapper>

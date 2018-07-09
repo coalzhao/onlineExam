@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.ScoreDao">
+	<sql id="cmsScoreColumns">
+		s.id AS "id",
+		s.u_id AS "userId",
+		s.sin_score AS "sinScore",
+		s.mul_score AS "mulScore",
+		s.time AS "time",
+		s.sum_score AS "sumScore",
+		s.paper_id AS "paperId",
+		s.paper_name AS "paperName",
+		s.create_by AS "createBy.id",
+		s.create_date AS "createDate",
+		s.update_by AS "updateBy.id",
+		s.update_date AS "updateDate",
+		s.remarks AS "remarks",
+		s.login_name AS "loginName",
+		u.name AS "user.name",
+		s.del_flag AS "delFlag"
+	</sql>
+	<select id="get" resultType="Score">
+		SELECT 
+			<include refid="cmsScoreColumns"/>
+		FROM cms_score s
+		<include refid="cmsScoreJoins"/>
+		WHERE s.id = #{id}
+	</select>
+	<sql id="cmsScoreJoins">
+		JOIN sys_user u ON u.id = s.u_id
+	</sql>
+	
+	<select id="findList" resultType="Score">
+		SELECT 
+			<include refid="cmsScoreColumns"/>
+		FROM cms_score s
+		<include refid="cmsScoreJoins"/>
+		<where>
+			s.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="createBy != null and createBy.id != null and createBy.id != ''">
+				AND s.create_by  = #{createBy.id}
+			</if>
+			<if test="paperName != null and paperName != ''">AND s.paper_name LIKE CONCAT('%', #{paperName}, '%')</if>
+            <if test="userName != null and userName != ''">AND s.user_name LIKE CONCAT('%', #{userName}, '%')</if>
+            <if test="loginName != null and loginName != ''">AND s.login_name =#{loginName}</if>
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+		</choose>
+	</select>
+	
+	
+	<select id="findScoreById" resultType="Score">
+		SELECT 
+			<include refid="cmsScoreColumns"/>
+		FROM cms_score s
+		<include refid="cmsScoreJoins"/>
+		where
+			 s.id=#{id}
+	</select>
+	
+	
+	<insert id="insert">
+		insert into cms_score(
+		id,
+		u_id,
+		user_name,
+		login_name,
+		sin_score,
+		mul_score,
+		sum_score,
+		paper_id,
+		paper_name,
+		create_date,
+		create_by,
+		update_date,
+		update_by,
+		remarks,
+		del_flag
+		)values(
+		#{id},
+		#{userId},
+		#{userName},
+		#{loginName},
+		#{sinScore},
+		#{mulScore},
+		#{sumScore},
+		#{paperId},
+		#{paperName},
+		#{createDate},
+		#{createBy.id},
+		#{updateDate},
+		#{updateBy.id},
+		#{remarks},
+		#{delFlag}
+		)
+	</insert>
+	<update id="updateScore">
+	UPDATE cms_score SET
+	sin_score=#{sinScore},
+	mul_score=#{mulScore},
+	sum_score=#{sumScore}
+	where id=#{id}
+	</update>
+	<update id="deleteScore">
+	UPDATE cms_score SET
+	del_flag=#{DEL_FLAG_DELETE}
+	where id=#{id}
+	</update>
+	
+	<select id="getPaperName" resultType="String">
+	select paper_name from cms_paper
+	where id=#{id}
+	</select>
+	<select id="isCommit" resultType="String">
+	select paper_name from cms_score
+	where u_id=#{userId} and paper_id=#{paperId}
+	</select>
+	<update id="upScore">
+	update cms_score set sin_score=#{sinScore},
+	mul_score=#{mulScore},sum_score=#{sumScore},del_flag=0
+	where u_id=#{userId} and paper_id=#{paperId}
+	</update>
+	<select id="getPersonScore" resultType="Score">
+	SELECT 
+			<include refid="cmsScoreColumns"/>
+		FROM cms_score s
+		<include refid="cmsScoreJoins"/>
+		where
+			s.del_flag = 0
+			and s.u_id=#{uid} and s.paper_id=#{pid}
+	</select>
+	<select id="judge" resultType="String">
+	select paper_name from cms_score
+	where u_id=#{uid} and paper_id=#{id} and del_flag=0;
+	</select>
+	
+	<select id="getUserName" resultType="String">
+  select name from sys_user where id=#{id}
+  </select>
+</mapper>

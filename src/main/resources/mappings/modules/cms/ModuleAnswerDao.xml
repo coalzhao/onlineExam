@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.ModuleAnswerDao">
+    
+ 	<sql id="cmsModuleAnswerColumns">
+		s.id AS "id",
+		s.sub_title AS "title",
+		s.sub_option_a AS "a",
+		s.sub_option_b AS "b",
+		s.sub_option_c AS "c",
+		s.sub_option_d AS "d",
+		s.sub_option_e AS "e",
+		s.sub_option_f AS "f",
+		s.sub_option_g AS "g",
+		s.sub_correct AS "correct",
+		s.sub_type AS "type",
+		s.sub_complexity AS "complexity",
+		s.judge AS "judge",
+		s.remarks AS "remarks",
+		s.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="cmsModuleAnswerJoins">
+		JOIN cms_subject s ON s.id = m.subject_id
+	</sql> 
+    
+    <select id="subjectNumberByModule" resultType="int">
+		SELECT COUNT(1)
+		FROM cms_answer_details
+		WHERE module_id = #{mid} AND user_id = #{uid} AND del_flag='0'
+	</select>
+	
+	<select id="subjectAllNumberByModule" resultType="int">
+		SELECT COUNT(1)
+		FROM cms_subject s
+		JOIN cms_subject_root sr ON sr.id = s.root_id
+		WHERE sr.parent_id = #{mid} AND sr.del_flag='0'
+	</select>
+    
+ 	<select id="getModuleAnswer" resultType="ModuleAnswer">
+		SELECT 
+		m.id AS "maId",
+		m.user_id AS "userId",
+		m.module_id AS "moduleId",
+		m.options AS "userOptions",
+		m.correct AS "correct",
+		m.create_date AS "createDate",
+		m.subject_id AS "userSubject",
+		m.del_flag AS "delFlag"
+		FROM cms_answer_details m
+		WHERE m.user_id = #{uid} AND m.subject_id = #{sid}
+	</select>
+	
+	<update id="updateModuleAnswer">
+		UPDATE cms_answer_details SET 	
+		user_id = #{userId},
+		module_id = #{moduleId},
+		options = #{userOptions},
+		correct = #{correct},
+		create_date = #{createDate},
+		subject_id = #{userSubject},
+		del_flag = #{delFlag}
+		WHERE id = #{maId}
+	</update>
+	
+	<select id="findSubjectByModule" resultType="String">
+		SELECT subject_id
+		FROM cms_answer_details
+		WHERE module_id = #{mid} AND user_id = #{uid} AND del_flag = '0'
+	</select>
+	
+	<select id="findSubject" resultType="Subject">
+		SELECT 
+			<include refid="cmsModuleAnswerColumns"/>
+		FROM cms_subject s
+		JOIN cms_subject_root sr ON sr.id = s.root_id
+		WHERE s.id 
+		NOT IN(
+		SELECT subject_id
+		FROM cms_answer_details m
+		WHERE m.module_id = #{mid} AND m.user_id = #{uid})
+		AND s.simulate='1'
+		AND s.del_flag='0'
+		AND sr.parent_id = #{mid}
+	</select>
+	
+	<select id="findALLFinishedSubject" resultType="Subject">
+		SELECT 
+			m.options AS "userAnswer",
+			m.correct AS "result",
+			<include refid="cmsModuleAnswerColumns"/>
+		FROM cms_subject s
+		JOIN cms_answer_details m ON m.subject_id = s.id
+		WHERE m.module_id = #{mid} AND m.user_id = #{uid}
+		AND s.simulate='1'
+		AND s.del_flag='0'
+	</select>
+	
+	
+	<insert id="saveAnswer">
+		INSERT INTO cms_answer_details(
+			user_id,
+			module_id,
+			options,
+			correct,
+			create_date,
+			subject_id,
+			del_flag
+		) VALUES (
+			#{ans.userId},
+			#{ans.moduleId},
+			#{sub.userAnswer},
+			#{sub.result},
+			#{ans.createDate},
+			#{sub.id},
+			#{sub.delFlag}
+		)
+	</insert>
+	
+	<update id="deleteModuleAnswer">
+		UPDATE cms_answer_details SET
+		del_flag = '1'
+		WHERE subject_id = #{id}
+	</update>
+
+</mapper>

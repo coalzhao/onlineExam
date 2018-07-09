@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.DataDao">
+
+	<select id="selectUser" resultType="user">
+		select
+		user.id,user.login_name as loginName,user.name as name
+		from sys_user user,sys_role role,sys_user_role ur
+		where user.id =ur.user_id and ur.role_id=role.id 
+		and role.id !='c993940389b649728e0c3335acda42bf'
+	</select>
+	
+	<select id="selectUserByid" resultType="user">
+		select
+		user.id,user.login_name as loginName,user.name as name
+		from sys_user user
+		where user.id=#{create_by}
+	</select>
+	<resultMap type="dataStatistics" id="map">
+		<id property="id" column="create_by" />
+		<association property="paperNum" select="slcPaperNum"
+			column="create_by" javaType="int" />
+		<association property="papSimNum" select="slcSimNum"
+			column="create_by" javaType="int" />
+		<association property="createBy" select="selectUserByid" column="create_by" />
+	</resultMap>
+
+	<select id="dataStatistics" resultMap="map">
+		select pap.create_by
+		from sys_user user,cms_paper pap
+		where
+			pap.create_by = user.id
+			<if test="beginTime != null">
+				and pap.create_date > #{beginTime}
+			</if>
+			<if test="endTime != null">
+				and   #{endTime} > pap.create_date 
+			</if>
+			<if test="id !=null and id !='' ">
+				and pap.create_by=#{id}
+			</if>
+		group by pap.create_by
+	</select>
+
+	<select id="slcPaperNum" resultType="int">
+		SELECT IFNULL(
+			(select count(pap.id)
+			from cms_paper pap
+			where pap.create_by=#{create_by} and pap.simulate ='0'
+			GROUP BY pap.create_by),0) 
+			as papNum
+	</select>
+	<select id="slcSimNum" resultType="int">
+		SELECT IFNULL(
+			(select count(pap.id)
+			from cms_paper pap
+			where pap.create_by=#{create_by} and pap.simulate ='1'
+			GROUP BY pap.create_by),0) 
+			as papNum
+	</select>
+<!-- 	<select id="slcSubAddNum" resultType="int">
+
+		select IFNULL(
+		(select count(log.id)
+		from sys_log log
+		where log.request_uri like '%subject/form%'
+		and
+		log.create_by=#{create_by}
+		GROUP BY log.create_by),0) as subAddNum
+	</select> -->
+<!-- 	<select id="slcSubUpdNum" resultType="int">
+		select IFNULL(
+		(select
+		count(log.id)
+		from sys_log log
+		where log.request_uri like '%subject/save%'
+		and
+		log.create_by=#{create_by}
+		GROUP BY log.create_by),0) as subUpdNum
+	</select> -->
+<!-- 	<select id="slcPapaUpdNum" resultType="int">
+		SELECT IFNULL(
+		(select
+		count(log.id)
+		from sys_log log
+		where log.request_uri like
+		'%paper/alterSubject%'
+		and log.create_by=#{create_by}
+		GROUP BY
+		log.create_by),0) as subUpdNum
+	</select> -->
+	
+	
+	<!-- 模块查询 -->
+	<select id="selectSubjectRoot" resultType="SubjectRoot">
+		select root.id ,root.name,root.description 
+		from cms_subject_root root
+		where root.parent_id =1 and root.del_flag =0
+	</select>
+	<!-- 所有模块下题目数据查询 -->
+	<select id="selectSubData" resultMap="subData">
+		select count(sub.id) as subNum,sub.root_id,root.name 
+		from cms_subject sub,cms_subject_root root
+		where sub.root_id = root.id and sub.del_flag=0 
+		GROUP BY sub.root_id
+	</select>
+	<resultMap type="SubjectData" id="subData">
+		<id column="root_id" property="subjectRoot.id"/>
+		<result column="name" property="subjectRoot.name"/>
+		<result column="subNum" property="subNum"/>
+	</resultMap>
+	<!-- 模块下数据查询 -->
+	<select id="selectModelData" resultMap="ModelData">
+		select root.id,root.name
+		from cms_subject_root root
+		where root.parent_ids  like CONCAT('%', #{id}, '%') and root.del_flag =0
+	</select>
+	<resultMap type="SubjectData" id="ModelData">
+		<id column="id" property="subjectRoot.id"/>
+		<result column="name" property="subjectRoot.name"/>
+		<association property="subNum" column="id" select="selectModelSubData" javaType="int"/>
+	</resultMap>
+	<select id="selectModelSubData" resultType="int" >
+		select count(sub.id) as subNum
+		from cms_subject sub
+		where sub.root_id=#{id} and sub.del_flag=0 
+	</select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

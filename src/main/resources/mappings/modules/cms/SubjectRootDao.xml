@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.SubjectRootDao">
+    
+	<sql id="cmsSubjectRootDaoColumns">
+		r.id AS "id",
+		r.parent_id AS "parent.id",
+		r.parent_ids AS "parentIds",
+		r.name AS "name",
+		r.description AS "description",
+		r.keywords AS "keywords",
+		r.sort AS "sort",
+		r.in_menu AS "inMenu",
+		r.in_list AS "inList",
+		r.show_modes AS "showModes",
+		r.create_by AS "createBy.id",
+		r.create_date AS "createDate",
+		r.update_by AS "updateBy.id",
+		r.update_date AS "updateDate",
+		r.remarks AS "remarks",
+		r.del_flag AS "delFlag",
+		sr.name AS "parent.name"
+	</sql>
+    
+    <sql id="cmsSubjectRootDaoJoins">
+	    LEFT JOIN cms_subject_root sr ON sr.id = r.parent_id
+		JOIN sys_user u ON u.id = r.create_by
+	</sql>
+    
+	<select id="get" resultType="SubjectRoot">
+		SELECT 
+			r.id AS "id",
+			r.parent_id AS "parent.id",
+			r.parent_ids AS "parentIds",
+			r.name AS "name",
+			r.description AS "description",
+			r.keywords AS "keywords",
+			r.sort AS "sort",
+			r.in_menu AS "inMenu",
+			r.in_list AS "inList",
+			r.show_modes AS "showModes",
+			r.create_by AS "createBy.id",
+			r.create_date AS "createDate",
+			r.update_by AS "updateBy.id",
+			r.update_date AS "updateDate",
+			r.remarks AS "remarks",
+			r.del_flag AS "delFlag"
+		FROM cms_subject_root r
+		JOIN sys_user u ON u.id = r.create_by
+		WHERE r.id = #{id}
+	</select>
+	
+	<select id="find" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			r.del_flag = #{DEL_FLAG_NORMAL}
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY r.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findList" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			r.del_flag = #{delFlag}
+			AND r.id!='1'
+			<if test="parent.id != null and parent.id != ''">
+				AND r.parent_id  = #{parent.id}
+			</if>
+			<if test="createBy != null and createBy.id != null and createBy.id != ''">
+				AND r.create_by  = #{createBy.id}
+			</if> 
+			<!-- ${sqlMap.dsf} -->
+		</where>
+		ORDER BY r.sort ASC
+	</select>
+	
+	<select id="findModule" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			r.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="parent.id != null and parent.id != ''">
+				AND r.parent_id  = #{parent.id}
+			</if>
+			<if test="inMenu != null and inMenu != '' ">
+				AND r.in_menu  = #{inMenu}
+			</if>
+			${sqlMap.dsf}
+		</where>		
+			ORDER BY r.sort ASC
+	</select>
+	<select id="findByParentId" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			r.del_flag = #{DEL_FLAG_NORMAL} 
+			<if test="parent.id != null and parent.id != ''">
+				AND r.parent_id  = #{parent.id}
+			</if>
+		</where>		
+		order by r.sort
+	</select>
+	<select id="findByParentIdsLike" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			r.del_flag = #{DEL_FLAG_NORMAL} 
+			AND r.parent_id LIKE 
+			CONCAT('%', #{id}, '%')
+		</where>		
+		order by r.sort
+	</select>
+	
+	<select id="findAllList" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			r.del_flag = #{DEL_FLAG_NORMAL}
+		</where>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO cms_subject_root(
+			id,
+			parent_id,
+			parent_ids,
+			name,
+			description,
+			keywords,
+			sort,
+			in_menu,
+			in_list,
+			show_modes,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			#{id},
+			#{parent.id},
+			#{parentIds},
+			#{name},
+			#{description},
+			#{keywords},
+			#{sort},
+			#{inMenu},
+			#{inList},
+			#{showModes},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE cms_subject_root SET 
+			parent_id = #{parent.id},
+			parent_ids = #{parentIds},
+			name = #{name},
+			description = #{description},
+			keywords = #{keywords},
+			sort = #{sort},
+			in_menu = #{inMenu},
+			in_list = #{inList},
+			show_modes = #{showModes},	
+			create_date = #{createDate},
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks},
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateParentIds">
+		UPDATE cms_subject_root SET 
+			parent_id = #{parent.id}, 
+			parent_ids = #{parentIds}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="delete">
+		UPDATE cms_subject_root SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id} OR parent_ids LIKE CONCAT('%,', #{id}, ',%')
+	</update>
+	
+	<select id="findByIdIn" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		from cms_subject_root s where 
+		<include refid="cmsSubjectRootDaoJoins"/>
+		<where>
+			id in (${id});
+		</where>		
+	</select>
+		<select id="findStats" resultType="java.util.Map" parameterType="java.util.Map">
+		select max(r.id) as subjectRootId,
+		       max(r.name) as subjectRootName,
+		       max(rp.id) as subjectRootParentId,
+		       max(rp.name) as subjectRootParentName,
+		       count(*) as cnt,
+		       max(s.updateDate) as updateDate,
+		  from cms_subject s
+		  JOIN cms_subject_root r ON r.id = s.root_id
+		  JOIN cms_subject_root rp ON r.parent_id = rp.id
+		<where>
+			s.del_flag = #{DEL_FLAG_NORMAL} 
+			AND s.root_id
+			AND r.id = :id or r.parent_ids LIKE CONCAT('%', #{parentIds}, '%')
+			group by rp.sort, rp.id, r.sort, r.id
+			order by rp.sort, rp.id, r.sort, r.id
+		</where>		
+	</select>
+	
+	<select id="findByModule" resultType="SubjectRoot">
+		SELECT 
+			<include refid="cmsSubjectRootDaoColumns"/>
+		FROM cms_subject_root r
+		<include refid="cmsSubjectRootDaoJoins"/>
+		WHERE
+			r.del_flag = '0'
+			AND 
+			r.parent_id =#{id}	
+		order by r.sort
+	</select>
+</mapper>

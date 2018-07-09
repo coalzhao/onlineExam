@@ -1,0 +1,394 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.PaperManualDao">
+
+	<insert id="insert">
+
+		INSERT into cms_paper(id,begin_time,end_time,paper_name,paper_score,paper_duration,
+
+		paper_status,radio_score,multiple_score,create_by,create_date,update_by,update_date,
+
+		remarks,del_flag,simulate)values(
+
+		#{id},#{beginTime},#{endTime},#{paperName},#{paperScore},#{paperDuration},#{paperStatus},
+
+		#{radioScore},#{multipleScore},#{createBy.id},#{createDate},#{updateBy.id},#{updateDate},
+
+		#{remarks},#{delFlag},#{simulate})
+
+	</insert>
+
+	<select id="findList" resultType="Paper">
+
+		SELECT p.id AS "id",p.begin_time AS "beginTime",p.end_time AS "endTime",
+
+		p.paper_name AS "paperName",p.paper_score AS "paperScore",p.paper_duration AS "paperDuration",
+
+		p.radio_score AS "radioScore",p.multiple_score AS "multipleScore",p.paper_status AS "paperStatus",
+
+		p.create_by AS "createBy.id",p.create_date AS "createDate",p.update_by AS "updateBy.id",
+
+		p.update_date AS "updateDate",p.remarks AS "remarks",p.del_flag AS "delFlag",p.simulate,user.name AS "createBy.name"
+
+		FROM cms_paper p,sys_user user
+
+		WHERE 
+			p.del_flag=0 and user.id=p.create_by
+			<if test="simulate !=null and simulate!='' ">
+				and p.simulate=#{simulate}
+			</if>
+			<if test="paperName !=null and paperName !=''">
+				and p.paper_name like CONCAT('%', #{paperName}, '%')
+			</if>
+			<if test="paperStatus != null and paperStatus !='' ">
+				and p.paper_status=#{paperStatus}
+			</if>
+			<if test=" beginTime !=null and beginTime !=''">
+				and  #{beginTime} > p.begin_time 
+			</if>
+				and p.del_flag =0
+			ORDER BY p.begin_time DESC
+	</select>
+
+	<select id="getPaper" resultType="Paper">
+
+		SELECT p.id AS "id",p.begin_time AS "beginTime",p.end_time AS "endTime",
+
+		p.paper_name AS "paperName",p.paper_score AS "paperScore",p.paper_duration AS "paperDuration",
+
+		p.radio_score AS "radioScore",p.multiple_score AS "multipleScore",p.paper_status AS "paperStatus",
+
+		p.create_by AS "createBy.id",p.create_date AS "createDate",p.update_by AS "updateBy.id",
+
+		p.update_date AS "updateDate",p.remarks AS "remarks",p.del_flag AS "delFlag",p.radio_number AS "radioNumber",
+
+		p.multiple_number AS "multipleNumber",p.simulate
+
+		FROM cms_paper p
+
+		where 
+
+		p.id =#{id}
+
+	</select> 
+
+	
+
+  	<resultMap type="Paper" id="paperAndSub">
+
+		<id column="id" property="id"/>
+
+		<result column="begin_time" property="beginTime"/>
+
+		<result column="end_time" property="endTime"/>
+
+		<result column="paper_name" property="paperName"/>
+
+		<result column="paper_score" property="paperScore"/>
+
+		<result column="paper_duration" property="paperDuration"/>
+
+		<result column="multiple_number" property="multipleNumber"/>
+
+		<result column="radio_number" property="radioNumber"/>
+
+		<result column="create_date" property="createDate"/>
+
+		<result column="update_date" property="updateDate"/>
+
+		<result column="remarks" property="remarks"/>
+
+		<result column="del_flag" property="delFlag"/>
+
+		<collection property="subList" javaType="list" 
+
+			select="selectSubject" column="id"/>
+
+	</resultMap>
+
+	<select id="selectPaperManualSubject" resultMap="paperAndSub">
+
+		SELECT DISTINCT par.id AS "id",par.begin_time AS "beginTime",par.end_time AS "endTime",
+
+		par.paper_name AS "paperName",par.paper_score AS "paperScore",par.paper_duration AS "paperDuration",
+
+		par.radio_score AS "radioScore",par.multiple_score AS "multipleScore",par.paper_status AS "paperStatus",
+
+		par.create_by AS "createBy.id",par.create_date AS "createDate",par.update_by AS "updateBy.id",
+
+		par.update_date AS "updateDate",par.remarks AS "remarks",par.del_flag AS "delFlag",par.radio_number AS "radioNumber",
+
+		par.multiple_number AS "multipleNumber",par.simulate
+
+		FROM cms_paper par,cms_pap_sub pap_sub,cms_subject sub,cms_subject_root root
+
+		WHERE 
+
+			par.id=pap_sub.paper_id
+
+			and pap_sub.sub_id=sub.id
+
+			and sub.root_id=root_id
+
+			and par.id =#{id}
+
+	</select>
+
+	
+
+	<select id="selectSubject" resultType="Subject">
+
+		SELECT DISTINCT sub.id AS "id",sub.sub_title AS "title",sub.sub_option_a AS "a",
+
+		sub.sub_option_b AS "b",sub.sub_option_c AS "c",sub.sub_option_d AS "d",
+
+		sub.sub_option_e AS "e",sub.sub_option_f AS "f",sub.sub_option_g AS "g",
+
+		sub.sub_correct AS "correct",
+
+		sub.sub_type AS "type",sub.root_id AS "subjectRoot.id",
+
+		sub.sub_complexity AS "complexity",sub.create_by AS "createBy.id",
+
+		sub.create_date AS "createDate",sub.update_by AS "updateBy.id",
+
+		sub.update_date AS "updateDate",sub.remarks AS "remarks",
+
+		sub.del_flag AS "delFlag",root.name AS "subjectRoot.name",sub.judge as "judge"
+
+		FROM cms_subject sub,cms_pap_sub pap_sub,cms_subject_root root
+
+		WHERE sub.root_id =root.id
+
+    	and sub.id=pap_sub.sub_id 
+    	
+    	and pap_sub.del_flag=0
+
+		and pap_sub.paper_id=#{id}
+
+	</select>
+
+	<resultMap type="Subject" id="subAndRoot">
+
+		<id column="id" property="id"/>
+
+		<result column="sub_title" property="title"/>
+
+		<result column="sub_option_a" property="a"/>
+
+		<result column="sub_option_b" property="b"/>
+
+		<result column="sub_option_c" property="c"/>
+
+		<result column="sub_option_d" property="d"/>
+
+		<result column="sub_option_e" property="e"/>
+
+		<result column="sub_option_f" property="f"/>
+
+		<result column="sub_option_g" property="g"/>
+
+		<result column="sub_correct" property="correct"/>
+
+		<!-- <result column="sub_score" property="score"/> -->
+
+		<result column="sub_complexity" property="complexity"/>
+
+		<result column="remarks" property="remarks"/>
+
+		<result column="del_flag" property="delFlag"/>
+
+		<association property="subjectRoot" column="root_id" javaType="SubjectRoot">
+
+			<id column="id" property="id"/>
+
+			<result column="name" property="subjectRoot.name"/>
+
+		</association>
+
+	</resultMap>
+	
+	
+	<update id="subjectDelete">
+		update cms_pap_sub 
+		set cms_pap_sub.del_flag='1'
+		WHERE cms_pap_sub.sub_id=#{subjectId} and cms_pap_sub.paper_id=#{paperId}
+	</update>
+	
+	<update id="subUpdDel">
+		update cms_pap_sub 
+		set cms_pap_sub.del_flag='0'
+		WHERE cms_pap_sub.sub_id=#{subjectId} and cms_pap_sub.paper_id=#{paperId}
+	</update>
+	
+	<select id="subSel" resultType="subject">
+		SELECT  cms_pap_sub.sub_id as id
+		FROM cms_pap_sub 
+		WHERE cms_pap_sub.sub_id=#{subjectId} and cms_pap_sub.paper_id=#{paperId}
+	</select>
+	
+	
+
+	<insert id="subAdd">
+
+		INSERT INTO cms_pap_sub(paper_id,sub_id,del_flag)
+
+		values(#{paper_id},#{sub_id},'0')
+
+	</insert>
+
+<update id="papUpdate">
+
+		UPDATE cms_paper p
+
+		<set>
+
+			<if test="updateDate!=null">
+
+				p.update_date=#{updateDate},
+
+			</if>
+
+			<if test="updateBy!=null">
+
+				p.update_by=#{updateBy.id},
+
+			</if>
+
+			<if test="delFlag!=null">
+
+				p.del_flag=#{delFlag},
+
+			</if>
+
+			<if test="radioNumber!=null">
+
+				p.radio_number=#{radioNumber},
+
+			</if>
+			<if test="radioScore!=null">
+				p.radio_score =#{radioScore},
+			</if>
+			<if test="multipleNumber!=null">
+
+				p.multiple_number=#{multipleNumber},
+
+			</if>
+			<if test="multipleScore!=null">
+				p.multiple_score =#{multipleScore},
+			</if>
+			<if test="paperScore!=null">
+
+				p.paper_score=#{paperScore},
+
+			</if>
+
+			<if test="updateDate!=null">
+
+				p.update_date=#{updateDate},
+
+			</if>
+
+			<if test="updateBy!=null">
+
+				p.update_by=#{updateBy.id},
+
+			</if>
+			<if test="paperStatus!=null">
+				p.paper_status=#{paperStatus},
+			</if>
+			<if test="beginTime != null">
+				p.begin_time=#{beginTime},
+			</if>
+			<if test="endTime != null">
+				p.end_time=#{endTime},
+			</if>
+			<if test="paperDuration!=null and paperDuration!=''">
+				p.paper_duration=#{paperDuration},
+			</if>
+		</set>
+
+		WHERE p.id=#{id}
+
+	</update>
+
+	
+
+ 	<select id="selectSubList" parameterType="subject" resultType="subject">
+
+		select sub.id AS "id",sub.sub_title AS "title",sub.sub_option_a AS "a",
+
+		sub.sub_option_b AS "b",sub.sub_option_c AS "c",sub.sub_option_d AS "d",
+
+		sub.sub_option_e AS "e",sub.sub_option_f AS "f",sub.sub_option_g AS "g",
+
+		sub.sub_correct AS "correct",
+
+		sub.sub_type AS "type",sub.root_id AS "subjectRoot.id",
+
+		sub.sub_complexity AS "complexity",sub.create_by AS "createBy.id",
+
+		sub.create_date AS "createDate",sub.update_by AS "updateBy.id",
+
+		sub.update_date AS "updateDate",sub.remarks AS "remarks",sub.judge,
+
+		sub.del_flag AS "delFlag",root.name AS "subjectRoot.name",sub.simulate
+
+		from  cms_subject sub,cms_subject_root root
+
+		where 	sub.root_id = root.id
+
+			<if test="subjectRoot!=null">
+
+				<if test="subjectRoot.id !=null and subjectRoot.id != '' ">
+
+					and sub.root_id =#{subjectRoot.id}
+
+				</if>
+
+			</if>
+
+			<if test="title!=null and title != '' ">
+
+				and sub.sub_title like CONCAT('%', #{title}, '%')
+
+			</if>
+
+			 <if test="simulate == 1 ">
+
+				and sub.simulate =#{simulate}
+
+			</if> 
+			 <if test="simulate == 0 ">
+
+				and sub.simulate =#{simulate}
+
+			</if> 
+			<if test="type !=null and type !='' ">
+
+				and sub.sub_type =#{type}
+
+			</if>
+
+				 and sub.del_flag !=1
+
+	</select>
+	
+	<select id="slcRadioNum" resultType="int">
+		select COUNT(sub.sub_type) as radNum
+		from cms_pap_sub ps,cms_subject sub
+		where 
+			ps.sub_id = sub.id  and ps.paper_id =#{paperId}
+			and sub.sub_type=1 and ps.del_flag =0
+	</select>
+	<select id="slcMltNum" resultType="int">
+		select COUNT(sub.sub_type) as mlNum
+		from cms_pap_sub ps,cms_subject sub
+		where 
+			ps.sub_id = sub.id  and ps.paper_id =#{paperId}
+			and sub.sub_type=2 and ps.del_flag =0
+	</select>
+	
+</mapper>

@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.thinkgem.jeesite.modules.cms.dao.PaperDao">
+	<sql id="cmsPaperColumns">
+		p.id AS "id",
+		p.begin_time AS "beginTime",
+		p.end_time AS "endTime",
+		p.paper_name AS "paperName",
+		p.paper_score AS "paperScore",
+		p.paper_duration AS "paperDuration",
+		p.radio_score AS "radioScore",
+		p.radio_number AS "radioNumber",
+		p.multiple_score AS "multipleScore",
+		p.multiple_number AS "multipleNumber",
+		p.simulate AS "simulate",
+		p.paper_status AS "paperStatus",
+		p.create_by AS "createBy.id",
+		p.create_date AS "createDate",
+		p.update_by AS "updateBy.id",
+		p.update_date AS "updateDate",
+		p.remarks AS "remarks",
+		p.del_flag AS "delFlag"
+	</sql>
+	<sql id="cmsPaperJoins">
+		JOIN cms_pap_sub ps	ON p.id = ps.paper_id
+		JOIN cms_subject s ON ps.sub_id = s.id
+		JOIN sys_user u ON u.id = p.create_by
+	</sql>
+	<select id="getAllPaper" resultType="Paper">
+		SELECT
+			<include refid="cmsPaperColumns" />
+		FROM cms_paper p where p.paper_status='1' and p.simulate='0' and p.begin_time &lt; NOW() and p.end_time &gt; NOW()- INTERVAL 20 MINUTE and p.del_flag='0'
+	</select>
+	
+	<select id="get" resultType="Paper">
+		SELECT
+			<include refid="cmsPaperColumns" />
+		FROM cms_paper p
+			<!-- <include refid="cmsPaperJoins"/> -->
+		WHERE p.id = #{id}
+	</select>
+	
+	<insert id="creatPaper">
+		insert into cms_pap_sub(
+		paper_id,
+		sub_id,
+		del_flag
+		)values(
+		#{param1},
+		#{param2},
+		'0'
+		)
+	</insert>
+	
+	<select id="getSubjectIds" resultType="String">
+		SELECT sub_id FROM cms_pap_sub WHERE paper_id=#{paperId} AND del_flag='0'
+	</select>
+	
+	<select id="findList" resultType="Paper">
+		SELECT 
+			u.name AS "createBy.name",
+			<include refid="cmsPaperColumns"/>
+		FROM cms_paper p
+		JOIN sys_user u ON u.id = p.create_by
+		<where>
+			p.del_flag = #{delFlag}
+			<if test="paperName != null and paperName != ''">
+				AND p.paper_name LIKE CONCAT('%', #{paperName}, '%')
+			</if>
+			<if test="paperStatus != null and paperStatus != ''">
+				AND p.paper_status = #{paperStatus}
+			</if>
+		</where>
+		ORDER BY updateDate DESC
+	</select>
+	<insert id="insert">
+		insert into cms_paper(
+		id,
+		begin_time,
+		end_time,
+		paper_name,
+		paper_score,
+		paper_duration,
+		radio_score,
+		radio_number,
+		multiple_score,
+		multiple_number,
+		simulate,
+		paper_status,
+		create_by,
+		create_date,
+		update_by,
+		update_date,
+		remarks,
+		del_flag
+		)values(
+		#{id},
+		#{beginTime},
+		#{endTime},
+		#{paperName},
+		#{paperScore},
+		#{paperDuration},
+		#{radioScore},
+		#{radioNumber},
+		#{multipleScore},
+		#{multipleNumber},
+		#{simulate},
+		#{paperStatus},
+		#{createBy.id},
+		#{createDate},
+		#{updateBy.id},
+		#{updateDate},
+		#{remarks},
+		#{delFlag}
+		)
+	</insert>
+	<update id="delSubject">
+		UPDATE cms_pap_sub SET
+		del_flag = '1'
+		WHERE paper_id = #{pid} AND sub_id = #{sid} AND del_flag = '0'
+	</update>
+	<update id="notDelSubject">
+		UPDATE cms_pap_sub SET
+		del_flag = '0'
+		WHERE paper_id = #{pid} AND sub_id = #{sid} 
+	</update>
+	<update id="delAllSubject">
+		UPDATE cms_pap_sub SET
+		del_flag = '1'
+		WHERE paper_id = #{pid}
+	</update>
+	<update id="alterSubject">
+		UPDATE cms_pap_sub SET
+		sub_id = #{id},
+		del_flag = '0'
+		WHERE paper_id = #{pid} AND sub_id = #{sid} AND del_flag='0'
+	</update>
+	<update id="subjectSort">
+		UPDATE cms_pap_sub SET
+		num = #{num}
+		WHERE paper_id = #{pid} AND sub_id = #{sid} AND del_flag='0'
+	</update>
+	<insert id="saveSubject">
+		INSERT INTO cms_pap_sub(
+		paper_id,
+		sub_id,
+		del_flag
+		)values(
+		#{pid},
+		#{id},
+		'0'
+		)
+	</insert>
+	<update id="update">
+		update cms_paper set
+		begin_time = #{beginTime},
+		end_time = #{endTime},
+		paper_name = #{paperName},
+		paper_score = #{paperScore},
+		paper_duration = #{paperDuration},
+		radio_score = #{radioScore},
+		radio_number = #{radioNumber},
+		multiple_score = #{multipleScore},
+		multiple_number = #{multipleNumber},
+		simulate = #{simulate},
+		paper_status = #{paperStatus},
+		create_date = #{createDate},
+		update_by = #{updateBy.id},
+		update_date = #{updateDate},
+		remarks = #{remarks},
+		del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	<update id="delete">
+		UPDATE cms_paper SET
+		del_flag = '1'
+		WHERE id = #{id}
+	</update>
+	<select id="getSubject" resultType="int">
+		SELECT count(1) 
+		FROM cms_pap_sub
+		WHERE paper_id = #{pid} AND sub_id = #{id} AND del_flag='0'
+	</select>
+	<select id="getDelSubject" resultType="int">
+		SELECT count(1) 
+		FROM cms_pap_sub
+		WHERE paper_id = #{pid} AND sub_id = #{id} AND del_flag='1'
+	</select>
+
+
+	
+	<select id="getSimPaper" resultType="Paper">
+		SELECT
+			<include refid="cmsPaperColumns" />
+		FROM cms_paper p where p.paper_status='1' and p.simulate='1'  and p.del_flag='0'
+	</select> 
+	<select id="findPaperName" resultType="Paper">
+		SELECT
+			<include refid="cmsPaperColumns"/>
+		FROM cms_paper p where 1=1
+	</select> 
+</mapper>
